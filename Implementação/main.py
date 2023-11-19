@@ -15,27 +15,8 @@ class perceptron:
     def _inicializar_pesos(self):
         self._pesos = [random.uniform(-1, 1) for _ in range(5)]
 
-    def treinar_perceptron(self, dados, classes, epochs, taxa_aprendizado, especies_disponiveis):
-
-        erro_geral = 1
-        for i in range(epochs):
-            if erro_geral == 0:
-                break
-            else:
-                erro_geral = 0
-
-            for h in range(len(dados)):
-                produto_escalar = self._juncao_aditiva(dados[h],1)
-                result = self._func_sigmoide(produto_escalar)
-
-                if result <= 0.5:
-                    classe_obtida = 0
-                else:
-                    classe_obtida = 1
-
-                erro = self._calcular_erro(classe_obtida, 0 if "Iris-" + especies_disponiveis[0] == classes[h] else 1)
-                self._atualizar_pesos(taxa_aprendizado, erro, dados[h])
-                erro_geral += erro ** 2
+    def treinar_perceptron(self, dados, classes, especies_disponiveis):
+        #TO DO: implementar com base no AG
 
     def _juncao_aditiva(self, input, bias):
         somatorio = sum([input[i] * self._pesos[1 + i] for i in range(len(input))])
@@ -44,17 +25,7 @@ class perceptron:
     def _func_sigmoide(self, valor):
         return 1.0 / (1 + math.exp(-valor))
 
-    def _calcular_erro(self, classe_obtida, classe_esperada):
-        return classe_esperada - classe_obtida
-
-    def _atualizar_pesos(self, taxa_aprendizado, erro, entradas):
-        for i in range(1,len(self._pesos)):
-            self._pesos[i] += taxa_aprendizado * erro * entradas[i - 1]
-
-        self._pesos[0] += taxa_aprendizado * erro
-
     def testar_perceptron(self, dados, classes, especies_disponiveis):
-
         corretos = 0
         for i in range(len(dados)):
             produto_escalar = self._juncao_aditiva(dados[i], 1)
