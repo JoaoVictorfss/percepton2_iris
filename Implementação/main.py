@@ -11,21 +11,21 @@ class Individuo:
 
 class perceptron:
     _pop: [Individuo]
-    _pesos: [float]
+    _pesos: [float] = [0.0,0.0,0.0,0.0,0.0]
+    _taxa_crossover = float
+    _taxa_mutacao = float
     # primeira posição é o peso do bias
     # as 4 restantes são os pesos das entradas
 
-    def __init__(self, population_size=50):
-        self._inicializar_pesos()
-        self._initialize_population(population_size)
+    def __init__(self, pop_size, taxa_crossover, taxa_mutacao):
+        self._inicializar_pop(pop_size)
+        self._taxa_crossover = taxa_crossover
+        self._taxa_mutacao = taxa_mutacao
 
-    def _initialize_population(self, population_size, num_weights=5):
-        self._pop = [Individuo() for _ in range(population_size)]
-        for individuo in self._pop:
-            individuo.cromossomo = np.random.uniform(-1, 1, num_weights)
-
-    def _inicializar_pesos(self):
-        self._pesos = [random.uniform(-1, 1) for _ in range(5)]
+    def _inicializar_pop(self, pop_size, num_weights=5):
+        self._pop = [Individuo() for _ in range(pop_size)]
+        for ind in self._pop:
+            ind.cromossomo = [np.random.uniform(-1, 1) for _ in range(num_weights)]
 
     def _calcular_aptidao_pop(self, dados, classes, especies_disponiveis):
         for ind in self._pop:
@@ -45,34 +45,80 @@ class perceptron:
 
             ind.aptidao = total_corretos / len(dados)
 
+        self._pop.sort(key=lambda Individuo: Individuo.aptidao)
+
     def _juncao_aditiva(self, pesos, entrada):
         somatorio = sum([entrada[i] * pesos[1 + i] for i in range(len(entrada))])
         return somatorio + (1 * pesos[0])
     def _func_sigmoide(self, valor):
         return 1.0 / (1 + math.exp(-valor))
 
+    def _selecao_torneio(self):
+        pop_intermediaria = []
 
-    def _mutacao(self, pop_intermediaria: [Individuo], taxa_mutacao, desvio_padrao):
+        for _ in range(len(self._pop)):
+            competidores = random.sample(self._pop, 4)
+            competidores_ordenados = sorted(competidores, key=lambda x: x.aptidao)
+            # Ordena os competidores, em ordem crescente
+            vencedor_torneio = competidores_ordenados[-1]
+            pop_intermediaria.append(copy.deepcopy(vencedor_torneio))
+
+        return pop_intermediaria
+
+    def _crossover_pop(self, pop_intermediaria):
+        pop_intermediaria_final = []
+
+        for i in range(0,len(self._pop),2):
+            pop_intermediaria_final += self._crossover_1ponto(pop_intermediaria[i], pop_intermediaria[i + 1])
+
+        return pop_intermediaria_final
+
+    def _crossover_1ponto(self, pai1: Individuo, pai2: Individuo):
+        chance = random.random()
+        if chance > self._taxa_crossover:  # crossover não ocorre
+            return [pai1, pai2]
+
+        n = len(pai1.cromossomo)
+        ponto_corte = random.randint(0, n - 2)
+        #cromossomo com n genes tem n - 1 pontos de corte
+
+        filho1 = Individuo()
+        filho2 = Individuo()
+
+        filho1.cromossomo = pai1.cromossomo[:ponto_corte + 1] + pai2.cromossomo[ponto_corte + 1:]
+        filho2.cromossomo = pai2.cromossomo[:ponto_corte + 1] + pai1.cromossomo[ponto_corte + 1:]
+
+        return [filho1, filho2]
+
+    def _mutacao(self, pop_intermediaria: [Individuo], desvio_padrao = 1):
+        pop_mutada = copy.deepcopy(pop_intermediaria)
+
         # taxa de mutação no formato de ponto_flutuante: 0,01
-        for ind in pop_intermediaria:
+        for ind in pop_mutada:
             for alelo in range(5):
-                if random.random() < taxa_mutacao:
+                if random.random() < self._taxa_mutacao:
                     ind.cromossomo[alelo] += np.random.normal(0, desvio_padrao)
 
-    def _crossover(self, parent1, parent2):
-        crossover_point = np.random.randint(1, len(parent1) - 1)
-        child1 = np.concatenate((parent1[:crossover_point], parent2[crossover_point:]))
-        child2 = np.concatenate((parent2[:crossover_point], parent1[crossover_point:]))
-        return child1, child2
+        return pop_mutada
 
-    def treinar_perceptron(self, dados, classes, especies_disponiveis):
-        #TO DO: implementar com base no AG
-        print("nada")
+    def treinar_perceptron(self, dados, classes, especies_disponiveis, geracoes):
+
+        for _ in range(geracoes):
+            self._calcular_aptidao_pop(dados,classes, especies_disponiveis)
+            pop_selecionada = self._selecao_torneio()
+            pop_crossover = self._crossover_pop(pop_selecionada)
+            pop_mutada = self._mutacao(pop_crossover)
+
+            self._pop = pop_mutada
+
+        self._calcular_aptidao_pop(dados,classes,especies_disponiveis)
+
+        self._pesos = self._pop[-1].cromossomo
 
     def testar_perceptron(self, dados, classes, especies_disponiveis):
         corretos = 0
         for i in range(len(dados)):
-            produto_escalar = self._juncao_aditiva(dados[i], 1)
+            produto_escalar = self._juncao_aditiva(self._pesos, dados[i])
 
             result = self._func_sigmoide(produto_escalar)
 
@@ -92,7 +138,7 @@ class perceptron:
         classe_um = 0
         classe_dois = 0
         for i in range(len(dados)):
-            produto_escalar = self._juncao_aditiva(dados[i], 1)
+            produto_escalar = self._juncao_aditiva(self._pesos, dados[i])
 
             result = self._func_sigmoide(produto_escalar)
 
@@ -218,27 +264,16 @@ def creating_arg_parser():
     parser = argparse.ArgumentParser(description='Perceptron para classificação binária da base de dados Iris.')
     # add_argument adiciona argumentos que podem ser inseridos na linha de comando
     parser.add_argument('especies', choices=disponiveis, nargs=2, help="Quais espécies de Iris (duas) devem ser usadas para treinar o Percéptron.")
-    parser.add_argument('--epocas', '-e', nargs='?', default=10, type=int, help="Número de épocas.")
+    parser.add_argument('--geracoes', '-g', nargs='?', default=50, type=int, help="Número de gerações.")
     parser.add_argument('--populacao', '-pop', nargs='?', default=50, type=int, help="Tamanho da população a ser gerada.")
-    parser.add_argument('--taxa', '-t', nargs='?', default=0.3, type=float,
-                        help="Taxa de aprendizado (eta). Deve ser inserido um valor entre 0 e 1.")
+    parser.add_argument('--taxa_crossover', '-tc', nargs="?", default=0.7, type=float,
+                        help="Taxa de crossover. Deve ser inserido um valor entre 0 e 1.")
+    parser.add_argument('--taxa_mutacao', '-tm', nargs='?', default=0.01, type=float,
+                        help="Taxa de mutação. Deve ser inserido um valor entre 0 e 1.")
     parser.add_argument('--proporcao', '-p', nargs='?', default=0.1, type=float,
                         help="Proporção da base que deve ser usada para treinamento. Deve ser inserido um valor entre 0 e 1.")
 
     return parser
-
-def selecao_torneio(populacao): # Verificar qual sera esse vetor populacao
-    pop_intermediaria = copy.deepcopy(populacao)
-    tamanho_populacao = len(populacao)
-    
-    for i in range(tamanho_populacao):
-        competidores = random.sample(populacao, 2) # Torneio com 2 competidores
-        # Foi implementado com base nisso: A população é uma lista de indivíduos, onde cada um tem seu cromossomo(peso) e sua aptidao
-        competidores_ordenados = sorted(competidores, key=lambda x: x['aptidao']) # Ordenar os competidores com base na aptidão (quanto menor, melhor)
-        vencedor_torneio = competidores_ordenados[0]
-        pop_intermediaria[i] = vencedor_torneio
-    
-    return pop_intermediaria
 
 def main():
     iris = fetch_ucirepo(id=53)
@@ -250,6 +285,9 @@ def main():
     if int(command_line.proporcao * 100) % 2 == 1:
         command_line.proporcao += 0.01
 
+    if command_line.populacao % 2 == 1:
+        command_line.populacao += 1
+
     if "setosa" not in command_line.especies:
         nao_treinamento = 1
     elif "versicolor" not in command_line.especies:
@@ -259,14 +297,15 @@ def main():
 
     (dados_entrada, dados_teste, dados_teste_extendidos, classes_entrada, classes_teste, classes_teste_extendidas) = obter_dados(iris, command_line.especies, command_line.proporcao, nao_treinamento)
 
-    p_iris = perceptron(command_line.populacao)
-    p_iris.treinar_perceptron(dados_entrada, classes_entrada, command_line.epocas, command_line.taxa, command_line.especies)
+    p_iris = perceptron(command_line.populacao, command_line.taxa_crossover, command_line.taxa_mutacao)
+    p_iris.treinar_perceptron(dados_entrada, classes_entrada, command_line.especies, command_line.geracoes)
 
     print(f"Especies de treino: {command_line.especies[0]} e {command_line.especies[1]}.")
-    print(f"Taxa de aprendizado: {int(command_line.taxa * 100)}%.")
-    print(f"Proporção de treinamento: {int(command_line.proporcao * 100)}%.")
-    print(f"Epocas: {command_line.epocas}.")
+    print(f"Número de Gerações: {command_line.geracoes}.")
     print(f"Tamanho da população: {command_line.populacao}.")
+    print(f"Taxa de crossover: {int(command_line.taxa_crossover * 100)}%.")
+    print(f"Taxa de mutação: {int(command_line.taxa_mutacao * 100)}%.")
+    print(f"Proporção de treinamento: {int(command_line.proporcao * 100)}%.")
     p_iris.testar_perceptron(dados_teste,classes_teste,command_line.especies)
     p_iris.testar_terceira_classse(dados_teste_extendidos, command_line.especies)
 
