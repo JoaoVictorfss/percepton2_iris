@@ -17,7 +17,7 @@ class perceptron:
 
     def __init__(self, population_size=50):
         self._inicializar_pesos()
-        self._initialize_population(self, population_size)
+        self._initialize_population(population_size)
 
     def _initialize_population(self, population_size, num_weights=5):
         self._pop = [Individuo() for _ in range(population_size)]
@@ -219,7 +219,7 @@ def creating_arg_parser():
     # add_argument adiciona argumentos que podem ser inseridos na linha de comando
     parser.add_argument('especies', choices=disponiveis, nargs=2, help="Quais espécies de Iris (duas) devem ser usadas para treinar o Percéptron.")
     parser.add_argument('--epocas', '-e', nargs='?', default=10, type=int, help="Número de épocas.")
-    parser.add_argument('--populacao', '-p', nargs='?', default=50, type=int, help="Tamanho da população a ser gerada.")
+    parser.add_argument('--populacao', '-pop', nargs='?', default=50, type=int, help="Tamanho da população a ser gerada.")
     parser.add_argument('--taxa', '-t', nargs='?', default=0.3, type=float,
                         help="Taxa de aprendizado (eta). Deve ser inserido um valor entre 0 e 1.")
     parser.add_argument('--proporcao', '-p', nargs='?', default=0.1, type=float,
