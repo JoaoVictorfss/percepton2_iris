@@ -3,6 +3,7 @@ from ucimlrepo import fetch_ucirepo
 import random
 import math
 import argparse
+import copy
 
 class Individuo:
     cromossomo: [float]
@@ -225,6 +226,19 @@ def creating_arg_parser():
                         help="Proporção da base que deve ser usada para treinamento. Deve ser inserido um valor entre 0 e 1.")
 
     return parser
+
+def selecao_torneio(populacao): # Verificar qual sera esse vetor populacao
+    pop_intermediaria = copy.deepcopy(populacao)
+    tamanho_populacao = len(populacao)
+    
+    for i in range(tamanho_populacao):
+        competidores = random.sample(populacao, 2) # Torneio com 2 competidores
+        # Foi implementado com base nisso: A população é uma lista de indivíduos, onde cada um tem seu cromossomo(peso) e sua aptidao
+        competidores_ordenados = sorted(competidores, key=lambda x: x['aptidao']) # Ordenar os competidores com base na aptidão (quanto menor, melhor)
+        vencedor_torneio = competidores_ordenados[0]
+        pop_intermediaria[i] = vencedor_torneio
+    
+    return pop_intermediaria
 
 def main():
     iris = fetch_ucirepo(id=53)
