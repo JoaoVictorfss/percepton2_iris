@@ -1,10 +1,15 @@
-import pandas as pd
+import numpy as np
 from ucimlrepo import fetch_ucirepo
 import random
 import math
 import argparse
 
+class Individuo:
+    cromossomo: [float]
+    aptidao: float
+
 class perceptron:
+    _pop: [Individuo]
     _pesos: [float]
     # primeira posição é o peso do bias
     # as 4 restantes são os pesos das entradas
@@ -15,15 +20,41 @@ class perceptron:
     def _inicializar_pesos(self):
         self._pesos = [random.uniform(-1, 1) for _ in range(5)]
 
-    def treinar_perceptron(self, dados, classes, especies_disponiveis):
-        #TO DO: implementar com base no AG
+    def _calcular_aptidao_pop(self, dados, classes, especies_disponiveis):
+        for ind in self._pop:
+            total_corretos = 0
+            for entrada in range(len(dados)):
+                produto_escalar = self._juncao_aditiva(ind.cromossomo, dados[entrada])
+                result = self._func_sigmoide(produto_escalar)
 
-    def _juncao_aditiva(self, input, bias):
-        somatorio = sum([input[i] * self._pesos[1 + i] for i in range(len(input))])
-        return somatorio + (bias * self._pesos[0])
+                if result <= 0.5:
+                    classe_obtida = 0
+                else:
+                    classe_obtida = 1
 
+                classe_correta = 0 if "Iris-" + especies_disponiveis[0] == classes[entrada] else 1
+                if classe_obtida == classe_correta:
+                    total_corretos += 1
+
+            ind.aptidao = total_corretos / len(dados)
+
+    def _juncao_aditiva(self, pesos, entrada):
+        somatorio = sum([entrada[i] * pesos[1 + i] for i in range(len(entrada))])
+        return somatorio + (1 * pesos[0])
     def _func_sigmoide(self, valor):
         return 1.0 / (1 + math.exp(-valor))
+
+
+    def _mutacao(self, pop_intermediaria: [Individuo], taxa_mutacao, desvio_padrao):
+        # taxa de mutação no formato de ponto_flutuante: 0,01
+        for ind in pop_intermediaria:
+            for alelo in range(5):
+                if random.random() < taxa_mutacao:
+                    ind.cromossomo[alelo] += np.random.normal(0, desvio_padrao)
+
+    def treinar_perceptron(self, dados, classes, especies_disponiveis):
+        #TO DO: implementar com base no AG
+        print("nada")
 
     def testar_perceptron(self, dados, classes, especies_disponiveis):
         corretos = 0
