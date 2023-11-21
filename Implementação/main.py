@@ -14,8 +14,14 @@ class perceptron:
     # primeira posição é o peso do bias
     # as 4 restantes são os pesos das entradas
 
-    def __init__(self):
+    def __init__(self, population_size=50):
         self._inicializar_pesos()
+        self._initialize_population(self, population_size)
+
+    def _initialize_population(self, population_size, num_weights=5):
+        self._pop = [Individuo() for _ in range(population_size)]
+        for individuo in self._pop:
+            individuo.cromossomo = [np.random.uniform(-1, 1, num_weights)]
 
     def _inicializar_pesos(self):
         self._pesos = [random.uniform(-1, 1) for _ in range(5)]
@@ -212,6 +218,7 @@ def creating_arg_parser():
     # add_argument adiciona argumentos que podem ser inseridos na linha de comando
     parser.add_argument('especies', choices=disponiveis, nargs=2, help="Quais espécies de Iris (duas) devem ser usadas para treinar o Percéptron.")
     parser.add_argument('--epocas', '-e', nargs='?', default=10, type=int, help="Número de épocas.")
+    parser.add_argument('--populacao', '-p', nargs='?', default=50, type=int, help="Tamanho da população a ser gerada.")
     parser.add_argument('--taxa', '-t', nargs='?', default=0.3, type=float,
                         help="Taxa de aprendizado (eta). Deve ser inserido um valor entre 0 e 1.")
     parser.add_argument('--proporcao', '-p', nargs='?', default=0.1, type=float,
@@ -238,13 +245,14 @@ def main():
 
     (dados_entrada, dados_teste, dados_teste_extendidos, classes_entrada, classes_teste, classes_teste_extendidas) = obter_dados(iris, command_line.especies, command_line.proporcao, nao_treinamento)
 
-    p_iris = perceptron()
+    p_iris = perceptron(command_line.populacao)
     p_iris.treinar_perceptron(dados_entrada, classes_entrada, command_line.epocas, command_line.taxa, command_line.especies)
 
     print(f"Especies de treino: {command_line.especies[0]} e {command_line.especies[1]}.")
     print(f"Taxa de aprendizado: {int(command_line.taxa * 100)}%.")
     print(f"Proporção de treinamento: {int(command_line.proporcao * 100)}%.")
     print(f"Epocas: {command_line.epocas}.")
+    print(f"Tamanho da população: {command_line.populacao}.")
     p_iris.testar_perceptron(dados_teste,classes_teste,command_line.especies)
     p_iris.testar_terceira_classse(dados_teste_extendidos, command_line.especies)
 
