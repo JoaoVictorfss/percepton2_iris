@@ -22,7 +22,7 @@ class perceptron:
     def _initialize_population(self, population_size, num_weights=5):
         self._pop = [Individuo() for _ in range(population_size)]
         for individuo in self._pop:
-            individuo.cromossomo = [np.random.uniform(-1, 1, num_weights)]
+            individuo.cromossomo = np.random.uniform(-1, 1, num_weights)
 
     def _inicializar_pesos(self):
         self._pesos = [random.uniform(-1, 1) for _ in range(5)]
