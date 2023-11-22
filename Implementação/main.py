@@ -45,11 +45,11 @@ class perceptron:
 
             ind.aptidao = total_corretos / len(dados)
 
-        self._pop.sort(key=lambda Individuo: Individuo.aptidao)
+        self._pop.sort(key=lambda i: i.aptidao)
 
-    def _juncao_aditiva(self, pesos, entrada):
-        somatorio = sum([entrada[i] * pesos[1 + i] for i in range(len(entrada))])
-        return somatorio + (1 * pesos[0])
+    def _juncao_aditiva(self, cromossomo, entrada):
+        somatorio = sum([entrada[i] * cromossomo[1 + i] for i in range(len(entrada))])
+        return somatorio + (1 * cromossomo[0])
     def _func_sigmoide(self, valor):
         return 1.0 / (1 + math.exp(-valor))
 
@@ -57,7 +57,7 @@ class perceptron:
         pop_intermediaria = []
 
         for _ in range(len(self._pop)):
-            competidores = random.sample(self._pop, 4)
+            competidores = random.sample(self._pop, 2)
             competidores_ordenados = sorted(competidores, key=lambda x: x.aptidao)
             # Ordena os competidores, em ordem crescente
             vencedor_torneio = competidores_ordenados[-1]
@@ -105,6 +105,7 @@ class perceptron:
 
         for _ in range(geracoes):
             self._calcular_aptidao_pop(dados,classes, especies_disponiveis)
+
             pop_selecionada = self._selecao_torneio()
             pop_crossover = self._crossover_pop(pop_selecionada)
             pop_mutada = self._mutacao(pop_crossover)
@@ -112,7 +113,6 @@ class perceptron:
             self._pop = pop_mutada
 
         self._calcular_aptidao_pop(dados,classes,especies_disponiveis)
-
         self._pesos = self._pop[-1].cromossomo
 
     def testar_perceptron(self, dados, classes, especies_disponiveis):
@@ -151,6 +151,7 @@ class perceptron:
         print(f"\nTeste terceira classe.")
         print(f"{classe_um} de {len(dados)} classificados como {especies_disponiveis[0]}.")
         print(f"{classe_dois} de {len(dados)} classificados como {especies_disponiveis[1]}.")
+
 def normalizar_dados(setosa, versicolor, virginica, nao_treinamento):
 
     menor = [math.inf for _ in range(4)]
@@ -264,13 +265,13 @@ def creating_arg_parser():
     parser = argparse.ArgumentParser(description='Perceptron para classificação binária da base de dados Iris.')
     # add_argument adiciona argumentos que podem ser inseridos na linha de comando
     parser.add_argument('especies', choices=disponiveis, nargs=2, help="Quais espécies de Iris (duas) devem ser usadas para treinar o Percéptron.")
-    parser.add_argument('--geracoes', '-g', nargs='?', default=50, type=int, help="Número de gerações.")
+    parser.add_argument('--geracoes', '-g', nargs='?', default=10, type=int, help="Número de gerações.")
     parser.add_argument('--populacao', '-pop', nargs='?', default=50, type=int, help="Tamanho da população a ser gerada.")
     parser.add_argument('--taxa_crossover', '-tc', nargs="?", default=0.7, type=float,
                         help="Taxa de crossover. Deve ser inserido um valor entre 0 e 1.")
     parser.add_argument('--taxa_mutacao', '-tm', nargs='?', default=0.01, type=float,
                         help="Taxa de mutação. Deve ser inserido um valor entre 0 e 1.")
-    parser.add_argument('--proporcao', '-p', nargs='?', default=0.1, type=float,
+    parser.add_argument('--proporcao', '-p', nargs='?', default=0.2, type=float,
                         help="Proporção da base que deve ser usada para treinamento. Deve ser inserido um valor entre 0 e 1.")
 
     return parser
